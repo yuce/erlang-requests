@@ -1,0 +1,14 @@
+{application, requests,
+ [{description, "Erlang port of Python requests module"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+  {maintainers, ["Yuce Tekol"]},
+  {licenses, ["MIT"]},
+  {links, [{git, "https://github.com/yuce/erlang-requests.git"}]}
+ ]}.
