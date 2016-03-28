@@ -38,23 +38,25 @@
          text/1]).
 
 -define(REF(Response), {requests@response, Response}).
+-define(VERSION, "0.1.0").
 
 %% == API
 
 get(Url) ->
     get(Url, #{}).
 
-get(Url, _Opts) ->
+get(Url, Opts) ->
+    NewOpts = process_opts(Opts),
     application:start(teacup),
     {ok, {Scheme, _Auth, Domain, Port, Path, Qry, _Fragment}} =
         http_uri:parse(Url, [{fragment, true}]),
     NewDomain = list_to_binary(Domain),
     Conn = case Scheme of
         http ->
-            {ok, C} = teacup_http:connect(NewDomain, Port),
+            {ok, C} = teacup_http:connect(NewDomain, Port, NewOpts),
             C;
         https ->
-            {ok, C} = teacup_http:connect(NewDomain, Port, #{tls => true}),
+            {ok, C} = teacup_http:connect(NewDomain, Port, NewOpts#{tls => true}),
             C
     end,
     NewPath = string:concat(Path, Qry),
@@ -71,6 +73,17 @@ headers(?REF(#{headers := Headers}), HeaderName) ->
 text(?REF(#{body := Body})) -> Body.
 status_code(?REF(#{status_code := StatusCode})) -> StatusCode.
 
+%% == Internal
+
+process_opts(Opts) ->
+    Headers = maps:merge(default_headers(),
+                         maps:get(headers, Opts, #{})),
+    #{headers => Headers}.
+
+default_headers() ->
+    #{<<"user-agent">> => <<"erlang-requests/", ?VERSION>>}.
+
+%% == Tests
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
