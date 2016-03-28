@@ -42,9 +42,9 @@
 %% == API
 
 get(Url) ->
-    get(Url, #{timeout => 5000}).
+    get(Url, #{}).
 
-get(Url, #{timeout := Timeout}) ->
+get(Url, _Opts) ->
     application:start(teacup),
     {ok, {Scheme, _Auth, Domain, Port, Path, Qry, _Fragment}} =
         http_uri:parse(Url, [{fragment, true}]),
@@ -58,19 +58,11 @@ get(Url, #{timeout := Timeout}) ->
             C
     end,
     NewPath = string:concat(Path, Qry),
-    teacup_http:get(Conn, list_to_binary(NewPath)),
-    Response = receive
-        {http@teacup, Conn, {response, R}} ->
-            #{headers := Headers} = R,
-            NewR = R#{headers => maps:from_list(Headers)},
-            {ok, ?REF(NewR)};
-        {http@teacup, Conn, {error, E}} ->
-            {error, E}
-        after Timeout ->
-            {error, timeout}
-    end,
+    {ok, #{headers := Headers} = Response} =
+        teacup_http:get_sync(Conn, list_to_binary(NewPath)),
+    NewResponse = Response#{headers => maps:from_list(Headers)},
     teacup:disconnect(Conn),
-    Response.
+    {ok, ?REF(NewResponse)}.
 
 headers(?REF(#{headers := Headers})) -> Headers.
 headers(?REF(#{headers := Headers}), HeaderName) ->
